@@ -1,5 +1,18 @@
 #include <stdio.h>
 #include <ncurses.h>
+#include <signal.h>
+
+static volatile sig_atomic_t signal_ = 0;
+
+static void sig_handler(int sig)
+{
+  if (SIGWINCH == sig) {
+	signal_ = true;
+  }
+
+} // sig_handler
+
+
 
 int main() {
 
@@ -7,11 +20,11 @@ int main() {
 	noecho();
 	cbreak();
 
-
+	printw("Coumns: %d, Lines: %d\n", COLS, LINES);
 	int yMax, xMax;
 	getmaxyx(stdscr, yMax, xMax);
-	
-	WINDOW * menuwin = newwin(5, xMax-64, yMax-32, 5);
+	printw("%d xMax, %d yMax", xMax, yMax);	
+	WINDOW * menuwin = newwin(5, 15, (yMax/2.5), (xMax/2.15) );
 //	box(menuwin, 0, 'x');
 	//refresh();
 	wrefresh(menuwin);
@@ -20,24 +33,47 @@ int main() {
 	start_color();
 	init_pair(1, COLOR_WHITE, 0);
 	attron(COLOR_PAIR(1));
-	mvwprintw(menuwin, 0, (xMax-18)/2, "     DEAD");	
+	mvwprintw(menuwin, 0, 0, "      DEAD");	
 	wattroff(menuwin, COLOR_PAIR(1));
 	refresh();
 
-	char* options[3] = {"Start Chatting", "Enter Username", "\t   Exit     "};
+	char* options[3] = {"Start Chatting", "Enter Username", "Exit        "};
 	
 	int choice;
 	int highlight = 0;
 	
 
 	while(1) {
+		wtimeout(menuwin, 100); // 0.1 seconds
+		
+ 		choice = wgetch(menuwin);
+		if(signal(SIGWINCH, sig_handler) == SIG_ERR) 
+			printw("signal error");
+	
+
+				
+  		if (signal_) {
+    		/* do redrawing */
+			endwin();
+			refresh();
+			clear();
+			getmaxyx(stdscr, yMax, xMax);
+			menuwin = newwin(5, 15, (yMax/2.5), (xMax/2.15));
+			mvwprintw(menuwin, 0, 0, "     DEAD");
+			keypad(menuwin, true);
+	
+			
+		}
+		
+		
+	
 		for(int i = 0; i < 3; i++) {
 			if(i == highlight)
-				wattron(menuwin, A_REVERSE);
-			mvwprintw(menuwin, i+2, (xMax-18)/2, options[i]);
+			wattron(menuwin, A_REVERSE);
+			mvwprintw(menuwin, i+2, 1, options[i]);
 			wattroff(menuwin, A_REVERSE);
 		}
-		choice = wgetch(menuwin);
+	//choice = wgetch(menuwin);
 
 		switch (choice)
 		{
@@ -54,15 +90,14 @@ int main() {
 			default:
 				break;
 		}
-
+		
 		if(choice == 10)
 			break;
 	}
 
 
 
-	getch();
-
+	wrefresh(menuwin);
 	endwin();
 	return 0;
 

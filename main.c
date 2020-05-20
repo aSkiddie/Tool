@@ -5,6 +5,8 @@
 static volatile sig_atomic_t signal_ = 0;
 
 static void sig_handler(int sig)
+
+
 {
   if (SIGWINCH == sig) {
 	signal_ = true;
@@ -37,7 +39,7 @@ int main() {
 	wattroff(menuwin, COLOR_PAIR(1));
 	refresh();
 
-	char* options[3] = {"Start Chatting", "Enter Username", "Exit        "};
+	char* options[3] = {"Start Chatting", "Enter Username", "     Exit      "};
 	
 	int choice;
 	int highlight = 0;
@@ -53,7 +55,6 @@ int main() {
 
 				
   		if (signal_) {
-    		/* do redrawing */
 			endwin();
 			refresh();
 			clear();
